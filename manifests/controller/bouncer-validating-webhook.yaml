@@ -1,0 +1,38 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: bouncer-validating-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: bouncer/bouncer-certificate
+webhooks:
+  - name: bouncer-admission-controller.bouncer.svc.cluster.local
+    admissionReviewVersions: ['v1', 'v1beta1']
+    failurePolicy: Fail
+    timeoutSeconds: 2
+    sideEffects: None
+    matchPolicy: Equivalent
+    namespaceSelector:
+      matchExpressions:
+        - key: bouncer
+          operator: In
+          values: ["enable"]
+
+    rules:
+      - scope: Namespaced
+        operations: ['CREATE', 'UPDATE']
+        apiGroups: ['']
+        apiVersions: ['v1']
+        resources: ['pods']
+
+      - operations: ['CREATE', 'UPDATE']
+        apiGroups: ['apps']
+        apiVersions: ['v1', 'v1beta1']
+        resources: ['deployments', 'replicasets']
+        scope: 'Namespaced'
+
+    clientConfig:
+      service:
+        namespace: bouncer
+        name: bouncer-admission-controller
+        path: /v0/validate/probes

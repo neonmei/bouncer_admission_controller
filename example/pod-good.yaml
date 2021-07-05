@@ -1,0 +1,32 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: bouncer-example
+  name: etherpad
+  labels:
+    app: etherpad
+spec:
+  containers:
+    - name: etherpad
+      image: docker.io/etherpad/etherpad:1.8.13
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 9001
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "100m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+      readinessProbe:
+        initialDelaySeconds: 3
+        httpGet:
+          path: /
+          port: 9001
+      livenessProbe:
+        exec:
+          command:
+            - pidof
+            - node

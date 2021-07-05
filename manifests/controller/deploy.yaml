@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bouncer-admission-controller
+spec:
+  selector:
+    matchLabels:
+      app: bouncer-admission-controller
+  template:
+    metadata:
+      labels:
+        app: bouncer-admission-controller
+    spec:
+      securityContext:
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: bouncer-admission-controller
+          image: quay.io/neonmei/bouncer-controller:0.1.1
+          imagePullPolicy: Always
+          # env:
+          #   - name: RUST_LOG
+          #     value: actix_web=warn,bouncer=debug,kube=off
+          volumeMounts:
+            - mountPath: /bouncer/certs
+              name: certificates
+            - mountPath: /bouncer/configuration
+              name: configuration
+          resources:
+            limits:
+              memory: '256Mi'
+              cpu: '2'
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /health
+              port: 8080
+            periodSeconds: 15
+            initialDelaySeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+
+      volumes:
+        - name: certificates
+          secret:
+            secretName: bouncer-certificate
+        - name: configuration
+          configMap:
+            name: bouncer-configuration

@@ -1,0 +1,8 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: issuer-bouncer
+spec:
+  ca:
+    secretName: neonmei-certificate-authority

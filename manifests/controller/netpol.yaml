@@ -1,0 +1,18 @@
+# -*- mode: k8s -*-
+# -*- mode: k8s -*-
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bouncer-apiserver-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: bouncer-admission-controller
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system

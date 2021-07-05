@@ -1,0 +1,15 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: bouncer-certificate
+spec:
+  secretName: bouncer-certificate
+  dnsNames:
+    - bouncer-admission-controller.bouncer.svc.cluster.local
+    - bouncer-admission-controller.bouncer.svc
+    - bouncer-admission-controller
+  isCA: false
+  issuerRef:
+    name: issuer-bouncer
+    kind: ClusterIssuer

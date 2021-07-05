@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bouncer-configuration
+data:
+  bouncer.yaml: |
+    listen_address: '0.0.0.0:8080'
+    tls:
+      cert_path: certs/tls.crt
+      key_path: certs/tls.key
