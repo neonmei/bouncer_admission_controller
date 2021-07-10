@@ -1,17 +1,32 @@
-FROM docker.io/rust:1.52.1-alpine3.13 as build_step
+# Use cargo-chef to cache project's build dependencies
 
-ARG PACKAGE_DEPS="build-base=~0.5 libffi-dev~=3.3 openssl-dev=~1.1 gcc=~10.2"
-WORKDIR /bouncer
+FROM docker.io/rust:1.53-slim-buster as cargo-chef
+WORKDIR /usr/src
+RUN cargo install cargo-chef
 
+FROM docker.io/rust:1.53-slim-buster as planner
+WORKDIR /usr/src
+COPY --from=cargo-chef /usr/local/cargo/bin/cargo-chef /usr/local/cargo/bin/cargo-chef
 COPY . .
-RUN apk add --no-cache ${PACKAGE_DEPS} && \
-    cargo build --release
+RUN cargo chef prepare  --recipe-path recipe.json
 
-FROM alpine:3.13
+FROM docker.io/rust:1.53-slim-buster as cacher
+WORKDIR /usr/src
+COPY --from=cargo-chef /usr/local/cargo/bin/cargo-chef /usr/local/cargo/bin/cargo-chef
+COPY --from=planner /usr/src/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 
-RUN apk add --no-cache ca-certificates tzdata && \
-    adduser -u 10001 -h /bouncer -D controller
-COPY --chown=controller --from=build_step /bouncer/target/release/bouncer /bouncer/controller
+FROM docker.io/rust:1.53-slim-buster as builder
+ARG RUST_STRIP=1
+ARG PKG_CONFIG_ALLOW_CROSS=1
+WORKDIR /usr/src
+COPY . .
+COPY --from=cacher $CARGO_HOME $CARGO_HOME
+COPY --from=cacher /usr/src/target target
+RUN cargo build --release --bin bouncer && \
+    if test $RUST_STRIP -eq 1; then strip target/release/bouncer; fi
+
+FROM gcr.io/distroless/cc-debian10
+COPY --from=builder --chown=nonroot /usr/src/target/release/bouncer /bouncer/controller
 WORKDIR /bouncer
-
 ENTRYPOINT [ "/bouncer/controller"]
