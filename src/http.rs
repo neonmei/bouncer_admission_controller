@@ -1,8 +1,7 @@
+/// This module contains the http-related processing.
 use serde_json::json;
 use std::convert::TryInto;
-/// This module contains the http-related processing.
 use tracing::*;
-use uuid::Uuid;
 
 use crate::validators;
 
@@ -39,7 +38,6 @@ pub async fn get_healthcheck() -> impl Responder {
     level = "info",
     skip(http_request, body_json),
     fields(
-        request_id = %Uuid::new_v4(),
         method = %http_request.method(),
         uri = %http_request.uri()
     )
